@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en" id="top">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TapeTrim — US Navy Body Fat Calculator (Tape Measure Method)</title>
+<meta name="description" content="TapeTrim is a free US Navy body fat calculator: enter tape measurements (neck, waist, hip) and compare the Navy formula against the Deurenberg BMI estimate, see fat mass vs lean mass, set a target body-fat goal, and follow illustrated tape-placement guides.">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#17130E; --bg2:#1F1810; --card:#221B11; --card2:#2A2115;
+    --line:#3D3220;
+    --yellow:#FFD60A; --yellow-dk:#D9A800;
+    --ink:#FAF6EF; --muted:#C9BFAE; --faint:#8F8471;
+    --danger:#FF6B5B; --ok:#7CE38B;
+  }
+  html{ scroll-behavior:smooth; }
+  body{ background:var(--bg); color:var(--ink); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .poster{ font-weight:900; letter-spacing:-0.02em; }
+  .kicker{ font-size:.72rem; letter-spacing:.28em; text-transform:uppercase; color:var(--yellow); font-weight:800; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:1rem; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .card-hi{ background:var(--card2); border:1px solid #4A3B22; border-radius:1rem; }
+  .field{ width:100%; background:#14100A; border:1px solid var(--line); border-radius:.65rem; padding:.65rem .8rem; font-size:1rem; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .field:focus{ outline:2px solid var(--yellow); outline-offset:1px; border-color:var(--yellow); }
+  .field::placeholder{ color:#6E6350; }
+  label.lbl{ display:block; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.35rem; font-weight:700; }
+  .pill{ border:1px solid var(--line); border-radius:999px; padding:.5rem 1.15rem; font-weight:800; font-size:.85rem; letter-spacing:.04em; color:var(--muted); background:#14100A; transition:all .15s; cursor:pointer; }
+  .pill[aria-pressed="true"]{ background:var(--yellow); border-color:var(--yellow); color:#17130E; }
+  .pill:hover{ border-color:var(--yellow); color:var(--ink); }
+  .pill[aria-pressed="true"]:hover{ color:#17130E; }
+  .btn-primary{ background:var(--yellow); color:#17130E; border-radius:.75rem; padding:.8rem 1.6rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; font-size:.9rem; transition:transform .08s ease, background .15s; }
+  .btn-primary:hover{ background:#FFE14D; } .btn-primary:active{ transform:scale(.98); }
+  .btn-ghost{ border:1px solid var(--line); background:transparent; color:var(--muted); border-radius:.75rem; padding:.8rem 1.2rem; font-weight:700; font-size:.85rem; transition:all .15s; }
+  .btn-ghost:hover{ border-color:var(--yellow); color:var(--ink); }
+  .badge-free{ display:inline-flex; align-items:center; gap:.45rem; background:rgba(255,214,10,.1); color:var(--yellow); border:1px solid var(--yellow); font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:.4rem .9rem; border-radius:999px; }
+  .tape-strip{ height:16px; background-color:var(--yellow);
+    background-image:
+      repeating-linear-gradient(90deg, rgba(23,19,14,.9) 0 2px, transparent 2px 12px),
+      repeating-linear-gradient(90deg, rgba(23,19,14,.9) 0 2px, transparent 2px 60px);
+    background-size:100% 8px, 100% 15px; background-position:bottom,bottom; background-repeat:repeat-x; }
+  .tape-strip-v{ width:16px; background-color:var(--yellow);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(23,19,14,.9) 0 2px, transparent 2px 12px),
+      repeating-linear-gradient(0deg, rgba(23,19,14,.9) 0 2px, transparent 2px 60px);
+    background-size:8px 100%, 15px 100%; background-position:left,left; background-repeat:repeat-y; }
+  .giant{ font-size:clamp(4.5rem,14vw,8.5rem); line-height:.95; }
+  .num{ font-variant-numeric:tabular-nums; }
+  .diag{ background:#14100A; border:1px solid var(--line); }
+  .errbox{ border:1px solid var(--danger); background:rgba(255,107,91,.08); border-radius:.75rem; }
+  .faq-item{ border:1px solid var(--line); border-radius:.8rem; background:var(--card); overflow:hidden; }
+  .faq-a{ max-height:0; overflow:hidden; transition:max-height .25s ease; }
+  .faq-item.open .faq-a{ max-height:700px; }
+  .faq-item.open .faq-chev{ transform:rotate(180deg); }
+  .faq-chev{ transition:transform .2s; }
+  .zone-seg{ height:100%; }
+  .marker{ position:absolute; top:-6px; width:3px; height:calc(100% + 12px); background:var(--yellow); box-shadow:0 0 10px rgba(255,214,10,.9); }
+  .marker::after{ content:""; position:absolute; top:-9px; left:50%; transform:translateX(-50%); border:7px solid transparent; border-top-color:var(--yellow); }
+  .dropcap::first-letter{ font-family:Georgia,serif; font-size:3.2em; float:left; line-height:.9; padding-right:.12em; color:var(--yellow); font-weight:700; }
+  .no-print{}
+  @media print{ .no-print{ display:none !important; } }
+  input[type=range].tslider{ accent-color:var(--yellow); width:100%; }
+  .switch{ position:relative; width:46px; height:26px; border-radius:999px; background:#3D3220; transition:background .15s; flex:none; cursor:pointer; border:1px solid var(--line); }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#8F8471; transition:all .15s; }
+  .switch[aria-checked="true"]{ background:var(--yellow); border-color:var(--yellow); }
+  .switch[aria-checked="true"]::after{ left:22px; background:#17130E; }
+  .hist-chip{ cursor:pointer; }
+  .hist-chip:hover{ border-color:var(--yellow); }
+  ::selection{ background:var(--yellow); color:#17130E; }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- ============ STICKY HEADER ============ -->
+<header class="sticky top-0 z-40 border-b" style="background:rgba(23,19,14,.96); border-color:var(--line); backdrop-filter:blur(6px);">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2.5" aria-label="TapeTrim home">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="9" width="28" height="14" rx="3" fill="#FFD60A"/>
+        <rect x="2" y="9" width="28" height="14" rx="3" fill="none" stroke="#17130E" stroke-width="1.6"/>
+        <path d="M7 12v3M11 12v5M15 12v3M19 12v5M23 12v3M27 12v5" stroke="#17130E" stroke-width="1.8"/>
+        <circle cx="25.5" cy="16" r="2.6" fill="#17130E"/>
+      </svg>
+      <span class="poster text-2xl tracking-tight" style="color:var(--ink);">Tape<span style="color:var(--yellow);">Trim</span></span>
+    </a>
+    <nav class="flex items-center gap-5 text-sm font-semibold">
+      <a href="#top" class="hover:underline" style="color:var(--ink);">Home</a>
+      <a href="https://fixoraa.tech" class="hover:underline" style="color:var(--yellow);">More Tools</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ TOP AD ============ -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="relative overflow-hidden">
+  <div class="tape-strip"></div>
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-10 pb-8 sm:pt-14 sm:pb-10">
+    <div class="flex flex-col lg:flex-row lg:items-end gap-8">
+      <div class="flex-1">
+        <p class="kicker mb-3">No calipers · No scales · No guesswork</p>
+        <h1 class="poster uppercase" style="font-size:clamp(2.6rem,8vw,5.2rem); line-height:.95;">
+          Measure it.<br><span style="color:var(--yellow);">Trim it.</span>
+        </h1>
+        <p class="mt-4 max-w-xl text-base sm:text-lg" style="color:var(--muted);">
+          TapeTrim runs the <strong style="color:var(--ink);">US Navy tape-measure method</strong> on your neck, waist and hip —
+          then cross-checks it against the <strong style="color:var(--ink);">Deurenberg BMI formula</strong>,
+          maps your result on the fitness scale, and tells you exactly how much fat to lose to hit your goal.
+        </p>
+        <div class="mt-5 flex flex-wrap items-center gap-3">
+          <span class="badge-free"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>Unlimited Free Usage</span>
+          <span class="text-xs" style="color:var(--faint);">No signup · No paywall · Everything runs in your browser</span>
+        </div>
+      </div>
+      <div class="hidden lg:flex flex-col items-center gap-2 pr-4" aria-hidden="true">
+        <div class="poster num" style="font-size:5.5rem; color:var(--yellow);" id="hero_tease">–%</div>
+        <div class="text-xs uppercase tracking-[0.25em]" style="color:var(--faint);">body fat</div>
+      </div>
+    </div>
+  </div>
+  <div class="tape-strip"></div>
+</section>
+
+<!-- ============ TOOL ============ -->
+<main class="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-10">
+  <div id="errors" class="errbox hidden mb-5 p-4 text-sm" role="alert"></div>
+
+  <div class="grid gap-6 lg:grid-cols-5">
+    <!-- ===== INPUTS ===== -->
+    <section class="card p-5 sm:p-7 lg:col-span-2" aria-label="Your measurements">
+      <h2 class="poster text-xl uppercase mb-1">Your <span style="color:var(--yellow);">tape data</span></h2>
+      <p class="text-xs mb-5" style="color:var(--faint);">Grab a soft tape measure. See the placement guide below.</p>
+
+      <div class="mb-5">
+        <label class="lbl">Sex</label>
+        <div class="flex gap-2" role="group" aria-label="Sex">
+          <button type="button" id="sex_male" class="pill flex-1" aria-pressed="true">Male</button>
+          <button type="button" id="sex_female" class="pill flex-1" aria-pressed="false">Female</button>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="lbl">Units</label>
+        <div class="flex gap-2" role="group" aria-label="Units">
+          <button type="button" id="unit_metric" class="pill flex-1" aria-pressed="true">Metric · cm / kg</button>
+          <button type="button" id="unit_imperial" class="pill flex-1" aria-pressed="false">Imperial · in / lb</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="lbl" for="in_height">Height <span class="unit-len">(cm)</span></label>
+          <input id="in_height" class="field num" type="number" inputmode="decimal" min="0" step="any" value="178" placeholder="178">
+        </div>
+        <div>
+          <label class="lbl" for="in_weight">Weight <span class="unit-mass">(kg)</span></label>
+          <input id="in_weight" class="field num" type="number" inputmode="decimal" min="0" step="any" value="78" placeholder="78">
+        </div>
+        <div>
+          <label class="lbl" for="in_age">Age <span>(years)</span></label>
+          <input id="in_age" class="field num" type="number" inputmode="numeric" min="0" step="1" value="32" placeholder="32">
+        </div>
+        <div>
+          <label class="lbl" for="in_neck">Neck <span class="unit-len">(cm)</span></label>
+          <input id="in_neck" class="field num" type="number" inputmode="decimal" min="0" step="any" value="39" placeholder="39">
+        </div>
+        <div>
+          <label class="lbl" for="in_waist">Waist <span class="unit-len">(cm)</span></label>
+          <input id="in_waist" class="field num" type="number" inputmode="decimal" min="0" step="any" value="88" placeholder="88">
+        </div>
+        <div id="hip_wrap">
+          <label class="lbl" for="in_hip">Hip <span class="unit-len">(cm)</span> <span class="normal-case tracking-normal" style="color:var(--yellow);">· female</span></label>
+          <input id="in_hip" class="field num" type="number" inputmode="decimal" min="0" step="any" value="102" placeholder="102">
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-3 mt-6">
+        <button id="btn_calc" class="btn-primary flex-1 min-w-[140px]">Calculate</button>
+        <button id="btn_reset" class="btn-ghost">Reset</button>
+      </div>
+      <p class="text-[11px] mt-3 leading-relaxed" style="color:var(--faint);">Inputs auto-save in this browser. Nothing is uploaded anywhere — TapeTrim works fully offline once loaded.</p>
+    </section>
+
+    <!-- ===== RESULTS ===== -->
+    <section class="lg:col-span-3 flex flex-col gap-6" aria-label="Results" aria-live="polite">
+      <div class="card-hi p-5 sm:p-7 relative overflow-hidden">
+        <div class="tape-strip-v absolute left-0 top-0 bottom-0" aria-hidden="true"></div>
+        <div class="pl-4">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <p class="kicker mb-1">US Navy method</p>
+              <div class="giant poster num" style="color:var(--yellow);" id="res_bf">–</div>
+              <p class="text-sm font-semibold" style="color:var(--muted);">estimated body fat</p>
+            </div>
+            <div class="text-right">
+              <span id="res_cat" class="inline-block poster uppercase text-sm sm:text-base px-4 py-2 rounded-lg" style="background:var(--yellow); color:#17130E;">—</span>
+              <p class="text-xs mt-2" style="color:var(--faint);">ACE fitness category</p>
+              <p class="text-xs mt-3" style="color:var(--faint);">BMI</p>
+              <p class="poster text-2xl num" id="res_bmi">–</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mt-6">
+            <div class="diag rounded-xl p-4">
+              <p class="lbl">Fat mass</p>
+              <p class="poster text-3xl sm:text-4xl num" id="res_fat">–</p>
+              <p class="text-xs mt-1" style="color:var(--faint);" id="res_fat_sub"></p>
+              <div class="h-2 rounded-full mt-3 overflow-hidden" style="background:#14100A;"><div id="bar_fat" class="h-full rounded-full" style="width:0%; background:var(--yellow); transition:width .5s;"></div></div>
+            </div>
+            <div class="diag rounded-xl p-4">
+              <p class="lbl">Lean mass</p>
+              <p class="poster text-3xl sm:text-4xl num" id="res_lean" style="color:var(--ink);">–</p>
+              <p class="text-xs mt-1" style="color:var(--faint);" id="res_lean_sub"></p>
+              <div class="h-2 rounded-full mt-3 overflow-hidden" style="background:#14100A;"><div id="bar_lean" class="h-full rounded-full" style="width:0%; background:var(--ok); transition:width .5s;"></div></div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3 mt-5">
+            <button id="btn_copy" class="btn-ghost text-xs">Copy result</button>
+            <span id="copy_note" class="text-xs self-center hidden" style="color:var(--ok);">Copied!</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== METHOD COMPARISON ===== -->
+      <div class="card p-5 sm:p-7">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
+          <h2 class="poster text-xl uppercase">Method <span style="color:var(--yellow);">face-off</span></h2>
+          <span class="text-[11px] uppercase tracking-widest font-bold" style="color:var(--faint);">Navy vs Deurenberg</span>
+        </div>
+        <p class="text-xs mb-5" style="color:var(--faint);">Two independent estimates of the same body. Agreement within ~3 points is a healthy sign; a big gap usually means unusual muscle mass or measurement slip.</p>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="diag rounded-xl p-4 text-center">
+            <p class="lbl">US Navy (tape)</p>
+            <p class="poster text-4xl num" style="color:var(--yellow);" id="cmp_navy">–</p>
+            <p class="text-[11px] mt-1 leading-snug" style="color:var(--faint);">circumference formula, log-based</p>
+          </div>
+          <div class="diag rounded-xl p-4 text-center">
+            <p class="lbl">Deurenberg (BMI·age)</p>
+            <p class="poster text-4xl num" style="color:var(--ink);" id="cmp_deu">–</p>
+            <p class="text-[11px] mt-1 leading-snug" style="color:var(--faint);">1.20×BMI + 0.23×age − 10.8×sex − 5.4</p>
+          </div>
+          <div class="diag rounded-xl p-4 text-center">
+            <p class="lbl">Difference</p>
+            <p class="poster text-4xl num" id="cmp_delta">–</p>
+            <p class="text-[11px] mt-1 leading-snug" style="color:var(--faint);" id="cmp_delta_note"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CATEGORY SCALE ===== -->
+      <div class="card p-5 sm:p-7">
+        <h2 class="poster text-xl uppercase mb-1">Where you <span style="color:var(--yellow);">land</span></h2>
+        <p class="text-xs mb-5" style="color:var(--faint);" id="scale_sub">ACE body-fat zones — cutoffs differ by sex.</p>
+        <div class="relative">
+          <div id="scale" class="relative flex h-9 rounded-lg overflow-hidden" style="border:1px solid var(--line);"></div>
+          <div id="scale_marker" class="marker" style="left:0%; display:none;" aria-hidden="true"></div>
+        </div>
+        <div id="scale_labels" class="flex mt-2 text-[10px] uppercase tracking-wider font-bold" style="color:var(--faint);"></div>
+        <p class="text-xs mt-3" style="color:var(--muted);" id="scale_note"></p>
+      </div>
+
+      <!-- ===== GOAL MODE ===== -->
+      <div class="card p-5 sm:p-7">
+        <div class="flex items-center justify-between gap-4 mb-1 flex-wrap">
+          <h2 class="poster text-xl uppercase">Goal <span style="color:var(--yellow);">mode</span></h2>
+          <button id="goal_toggle" class="switch" role="switch" aria-checked="false" aria-label="Toggle goal mode"></button>
+        </div>
+        <p class="text-xs mb-5" style="color:var(--faint);">Pick a target body-fat %. TapeTrim keeps your lean mass fixed and shows the fat you need to drop — and the scale weight that goes with it.</p>
+        <div id="goal_body" class="hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="flex-1">
+              <label class="lbl" for="in_goal">Target body fat %</label>
+              <input id="in_goal" type="range" min="5" max="40" step="0.5" value="18" class="tslider" aria-label="Target body fat percent">
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="in_goal_num" class="field num w-24 text-center" type="number" min="1" max="60" step="0.5" value="18" aria-label="Target body fat percent (number)">
+              <span class="font-bold" style="color:var(--yellow);">%</span>
+            </div>
+          </div>
+          <div id="goal_out" class="grid sm:grid-cols-3 gap-4 mt-5"></div>
+        </div>
+      </div>
+
+      <!-- ===== HISTORY ===== -->
+      <div class="card p-5 sm:p-7" id="hist_wrap" style="display:none;">
+        <h2 class="poster text-xl uppercase mb-1">Recent <span style="color:var(--yellow);">checks</span></h2>
+        <p class="text-xs mb-4" style="color:var(--faint);">Saved in this browser only. Tap a chip to reload those measurements.</p>
+        <div id="hist_list" class="flex flex-wrap gap-2"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== TAPE PLACEMENT GUIDE ===== -->
+  <section class="mt-10" aria-label="Tape placement guide">
+    <div class="tape-strip rounded-t-xl"></div>
+    <div class="card rounded-t-none p-5 sm:p-8" style="border-top:none;">
+      <h2 class="poster text-2xl sm:text-3xl uppercase mb-2">Tape <span style="color:var(--yellow);">placement guide</span></h2>
+      <p class="text-sm max-w-2xl mb-6" style="color:var(--muted);">The formula is only as good as the tape work. Stand relaxed, breathe normally, and measure on bare skin — the tape should touch without denting the skin. Take each reading twice and average.</p>
+      <div class="grid sm:grid-cols-3 gap-5">
+        <div class="diag rounded-xl p-5 text-center">
+          <svg viewBox="0 0 140 185" class="w-full h-44 mx-auto" role="img" aria-label="Neck measurement diagram">
+            <circle cx="70" cy="38" r="27" fill="none" stroke="#FAF6EF" stroke-width="3"/>
+            <path d="M56 64 L54 96 Q70 106 86 96 L84 64" fill="none" stroke="#FAF6EF" stroke-width="3"/>
+            <path d="M54 96 Q34 104 28 150 M86 96 Q106 104 112 150" fill="none" stroke="#FAF6EF" stroke-width="3"/>
+            <line x1="46" y1="76" x2="94" y2="76" stroke="#FFD60A" stroke-width="3.5" stroke-dasharray="8 5"/>
+            <circle cx="46" cy="76" r="3.5" fill="#FFD60A"/><circle cx="94" cy="76" r="3.5" fill="#FFD60A"/>
+            <text x="70" y="178" text-anchor="middle" fill="#8F8471" font-size="10">keep tape level</text>
+          </svg>
+          <h3 class="poster uppercase text-base mt-3" style="color:var(--yellow);">Neck</h3>
+          <p class="text-xs mt-2 leading-relaxed" style="color:var(--muted);">Just below the Adam's apple, at the base of the neck. Shoulders relaxed, tape horizontal and snug — don't choke yourself. Look straight ahead.</p>
+        </div>
+        <div class="diag rounded-xl p-5 text-center">
+          <svg viewBox="0 0 140 185" class="w-full h-44 mx-auto" role="img" aria-label="Waist measurement diagram">
+            <path d="M45 18 Q70 10 95 18 L90 70 Q88 95 92 120 L86 168 M45 18 L50 70 Q52 95 48 120 L54 168" fill="none" stroke="#FAF6EF" stroke-width="3"/>
+            <circle cx="70" cy="95" r="3" fill="#FFD60A"/>
+            <line x1="42" y1="95" x2="98" y2="95" stroke="#FFD60A" stroke-width="3.5" stroke-dasharray="8 5"/>
+            <circle cx="42" cy="95" r="3.5" fill="#FFD60A"/><circle cx="98" cy="95" r="3.5" fill="#FFD60A"/>
+            <text x="70" y="178" text-anchor="middle" fill="#8F8471" font-size="10">exhale normally</text>
+          </svg>
+          <h3 class="poster uppercase text-base mt-3" style="color:var(--yellow);">Waist</h3>
+          <p class="text-xs mt-2 leading-relaxed" style="color:var(--muted);"><strong style="color:var(--ink);">Men:</strong> at the navel. <strong style="color:var(--ink);">Women:</strong> the narrowest point of the torso. Exhale normally first — don't suck in, don't push out.</p>
+        </div>
+        <div class="diag rounded-xl p-5 text-center">
+          <svg viewBox="0 0 140 185" class="w-full h-44 mx-auto" role="img" aria-label="Hip measurement diagram">
+            <path d="M52 30 Q70 24 88 30 L94 90 Q100 130 96 165 M52 30 L46 90 Q40 130 44 165" fill="none" stroke="#FAF6EF" stroke-width="3"/>
+            <line x1="36" y1="118" x2="104" y2="118" stroke="#FFD60A" stroke-width="3.5" stroke-dasharray="8 5"/>
+            <circle cx="36" cy="118" r="3.5" fill="#FFD60A"/><circle cx="104" cy="118" r="3.5" fill="#FFD60A"/>
+            <text x="70" y="178" text-anchor="middle" fill="#8F8471" font-size="10">feet together</text>
+          </svg>
+          <h3 class="poster uppercase text-base mt-3" style="color:var(--yellow);">Hip <span class="text-xs" style="color:var(--faint);">· women only</span></h3>
+          <p class="text-xs mt-2 leading-relaxed" style="color:var(--muted);">Feet together, around the widest part of the hips and glutes. Keep the tape level all the way round — use a mirror to check the back.</p>
+        </div>
+      </div>
+    </div>
+    <div class="tape-strip rounded-b-xl"></div>
+  </section>
+</main>
+
+<!-- ============ BOTTOM AD ============ -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="464498"></script>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SEO ARTICLE ============ -->
+<section class="mx-auto max-w-6xl px-4 sm:px-6 pb-4">
+  <article id="seo-article" class="card p-6 sm:p-10">
+    <p class="kicker mb-3">The full guide</p>
+    <h2 class="poster text-3xl sm:text-4xl uppercase mb-6">Body fat, the <span style="color:var(--yellow);">Navy method</span>, and how to actually measure yourself</h2>
+
+    <p class="dropcap text-sm sm:text-base leading-relaxed mb-5" style="color:var(--muted);">Your bathroom scale tells you how much you weigh, but it cannot tell you what that weight is made of. Two people can stand at 80 kilograms side by side — one carrying a soft midsection, the other carrying dense muscle — and the scale will report the same number for both. Body fat percentage is the number that separates those two stories: it is the share of your total body weight made up of fat tissue, and it is one of the most useful single indicators of fitness, health risk, and progress. The trouble is that measuring it accurately has traditionally meant expensive equipment. That is where the US Navy method comes in. Developed in the 1980s at the Naval Health Research Center by researchers Hodgdon and Beckett, it estimates body fat from a few circumference measurements taken with an ordinary tape measure — no calipers, no water tanks, no X-ray scanners. It was designed to assess the fitness of thousands of service members quickly and cheaply, and it has since become one of the most widely used field methods in the world. TapeTrim puts both the original Navy formula and an independent cross-check formula in your browser, so you can get a serious estimate with nothing more than a soft measuring tape and five minutes.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">How the Navy formula works</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">The insight behind the Navy method is that body fat is not distributed randomly. In large population studies, the ratio of waist circumference to neck circumference — scaled against height — predicts total body fat remarkably well. The neck measurement is the clever part: it acts as a proxy for upper-body lean mass. A weightlifter with a thick neck and a moderate waist will register a lower body fat percentage than someone with the same waist but a thin neck, because the formula reads the thick neck as evidence of muscle rather than fat. This is why the Navy method outperforms simple waist-only rules for athletic builds.</p>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">For men, the formula is: body fat % = 86.010 × log₁₀(waist − neck) − 70.041 × log₁₀(height) + 36.76. For women, it is: body fat % = 163.205 × log₁₀(waist + hip − neck) − 97.684 × log₁₀(height) − 78.387, with all measurements in inches. Notice the logarithms: the relationship between tape measurements and body fat is not linear, so the formula compresses the numbers with base-10 logs before combining them. Women's formula adds a hip measurement and uses entirely different constants, reflecting both a higher baseline of essential fat and genuinely different fat-distribution patterns. TapeTrim converts metric inputs to inches internally before applying these exact equations, so you can measure in centimeters and still get the original validated result.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">Measuring like the protocol demands</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">Here is the uncomfortable truth about the Navy method: your technique moves the answer more than the formula does. A two-centimeter slip on the waist measurement can shift your result by one to two percentage points — more than a month of disciplined training might. So treat the measurement session like a small ritual. Measure in the morning, before eating, after using the bathroom, and on bare skin: clothing adds bulk that the formula cannot see through. Stand upright and relaxed, breathe normally, and take every reading at the end of a normal exhale — never while holding your breath or sucking in your stomach. The tape should be snug enough to touch the skin all the way around without leaving a dent. Take each measurement two or three times and use the average; if your readings disagree by more than a centimeter, keep practicing until they converge.</p>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">The landmarks matter. For the neck, wrap the tape just below the Adam's apple at the base of the neck, keeping it horizontal while you look straight ahead — tilting your head up or down changes the reading. For the waist, men measure at the level of the navel; women measure at the narrowest point of the torso, usually a few centimeters above the navel. For the hip (women only), stand with your feet together and wrap the tape around the widest part of the hips and glutes, checking in a mirror that the tape sits level across your back. Height should be measured standing tall without shoes. Write every number down immediately; memory is a worse tape measure than the tape itself.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">How accurate is it, really?</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">Validated against hydrostatic (underwater) weighing — the laboratory reference the Navy used — the method typically lands within three to four percentage points of the true value for average adults. That is honest accuracy: good enough to track change over months, too coarse to treat a single reading as gospel. It is less reliable at the extremes — very lean athletes, very muscular lifters, and people with obesity can all see larger errors, because their bodies break the population averages the formula was fitted on. Bloating, a big meal, or measuring at different times of day can all add noise that has nothing to do with fat.</p>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">This is exactly why TapeTrim shows the Deurenberg estimate beside the Navy result. The Deurenberg formula — body fat % = 1.20 × BMI + 0.23 × age − 10.8 × sex − 5.4, where sex is 1 for men and 0 for women — is a completely independent population estimate built from BMI, age, and sex rather than tape measurements. If the Navy and Deurenberg numbers agree within about three points, you can trust the neighborhood your result lives in. If they disagree sharply, the cause is usually informative: a big gap with a high Deurenberg number often flags heavy muscle mass confusing the BMI side, while a gap with a high Navy number usually means a tape reading drifted. Few free calculators show both methods side by side; the comparison turns one fragile number into a small, self-checking system.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">Reading your category</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">The American Council on Exercise publishes the most widely cited body-fat zones for adults. For men: essential fat 2–5%, athletes 6–13%, fitness 14–17%, average 18–24%, and obese at 25% and above. For women: essential fat 10–13%, athletes 14–20%, fitness 21–24%, average 25–31%, and obese at 32% and above. Essential fat is the baseline your body needs to function — it cushions organs, regulates hormones, and in women supports reproduction — which is why the female scale starts roughly ten points higher. Dropping near or below the essential range is dangerous, not admirable: it is associated with hormonal disruption, weakened immunity, and in women the loss of menstrual cycles.</p>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">For most people, the fitness-to-average band is the meaningful target zone — the range associated with the lowest long-term health risk and the best everyday energy. But context matters. A 55-year-old at 22% is in a different situation than a 25-year-old at 22%, because healthy body fat drifts upward slightly with age. Endurance athletes live happily in the athletes band; powerlifters may sit higher while being extraordinarily healthy by every other metric. Treat the category as a compass, not a verdict: what matters most is the direction your number moves over time under consistent measuring conditions.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">Setting a goal and tracking it</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">This is where most people misuse body-fat math. Suppose you weigh 85 kilograms at 28% body fat. Your fat mass is about 23.8 kg and your lean mass about 61.2 kg. If you want to reach 20% body fat while keeping your muscle — and you should want to keep your muscle — the target weight is not 85 minus some guess: it is your lean mass divided by one minus the target percentage, or 61.2 ÷ 0.80 ≈ 76.5 kg. That means roughly 8.5 kg of pure fat to lose. TapeTrim's goal mode does exactly this calculation, because the common shortcut of "lose X% of your weight" quietly assumes you will lose muscle too, which makes every diet look easier than it is.</p>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">Track no more than every two to four weeks. Daily and weekly tape readings mostly measure water, glycogen, gut contents, and your own inconsistency — real fat change is slower and quieter than that. A sustainable pace is roughly half to one percent of body weight per week, with strength training and adequate protein protecting the lean mass your goal math depends on. If your body-fat percentage stalls while your waist shrinks and your lifts climb, trust the trend: you are likely trading fat for muscle, which is the best possible outcome and one the scale will never show you.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">Common mistakes that skew the number</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">The classic errors are all technique, not math. Measuring over clothes. Measuring after a workout when muscles are pumped, or after a meal when the waist is distended. Pulling the tape tight enough to compress the skin, which can shave a full point off your reading and flatter you into complacency. Measuring the waist at a different height each time — the navel for men is a fixed landmark, use it exactly. Comparing a morning fasted reading with an evening reading and concluding your diet failed. And the most human error of all: rounding numbers in the flattering direction. The tape does not care about your feelings, and the formula works best when you let it be blunt.</p>
+    <p class="text-sm sm:text-base leading-relaxed mb-4" style="color:var(--muted);">There are also people for whom the Navy method is simply the wrong tool. It was validated on adults, so it should not be applied to children or teenagers, whose proportions are still changing. Pregnant women should not use it. People with significant edema, unusual fat distribution from medical conditions, or elite-level muscle mass will get numbers the formula was never designed to produce — for them, a DEXA scan or a trained professional with calipers is the honest route. Everyone else gets a method that costs nothing, takes five minutes, and — measured carefully and compared across its two formulas — tells a story your scale never could.</p>
+
+    <h3 class="poster text-xl uppercase mt-8 mb-3" style="color:var(--yellow);">The bottom line</h3>
+    <p class="text-sm sm:text-base leading-relaxed mb-2" style="color:var(--muted);">Body fat percentage turns the vague goal of "getting in shape" into something you can measure, target, and track. The US Navy method gives you a validated estimate with a tape measure; the Deurenberg cross-check keeps that estimate honest; the goal math turns your target into kilograms of fat to lose rather than wishful thinking. Measure carefully, measure consistently, and let the trend — not any single reading — tell you whether your training and nutrition are working. That is what the tape is for.</p>
+    <p class="text-xs mt-6 pt-4" style="color:var(--faint); border-top:1px solid var(--line);">Educational estimates only — not medical advice. If you have a health condition or are pursuing an aggressive target, consult a qualified professional.</p>
+  </article>
+</section>
+
+<!-- ============ FAQs ============ -->
+<section class="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+  <div class="max-w-3xl">
+    <p class="kicker mb-2">Questions</p>
+    <h2 class="poster text-3xl sm:text-4xl uppercase mb-6">Body fat <span style="color:var(--yellow);">FAQs</span></h2>
+    <div class="space-y-3" id="faq_list">
+      <div class="faq-item">
+        <button class="faq-q w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5 font-semibold" aria-expanded="false">
+          <span>What is the US Navy body fat formula?</span>
+          <svg class="faq-chev shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p class="px-4 sm:px-5 pb-5 text-sm leading-relaxed" style="color:var(--muted);">Developed by Hodgdon and Beckett in 1984, the Navy formula estimates body fat from tape measurements using base-10 logarithms. Men: 86.010 × log₁₀(waist − neck) − 70.041 × log₁₀(height) + 36.76. Women: 163.205 × log₁₀(waist + hip − neck) − 97.684 × log₁₀(height) − 78.387, with all measurements in inches. The neck term corrects for upper-body muscle, which is why the method handles athletic builds better than waist-only estimates.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5 font-semibold" aria-expanded="false">
+          <span>How do I measure my neck, waist, and hip correctly?</span>
+          <svg class="faq-chev shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p class="px-4 sm:px-5 pb-5 text-sm leading-relaxed" style="color:var(--muted);">Neck: just below the Adam's apple, tape horizontal, looking straight ahead. Waist: men at the navel, women at the narrowest point of the torso, measured after a normal exhale without sucking in. Hip (women only): feet together, around the widest part of the hips and glutes. Use a soft non-stretch tape on bare skin, keep it snug but not denting the skin, and average two or three readings. The illustrated placement guide above shows each landmark.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5 font-semibold" aria-expanded="false">
+          <span>How accurate is the Navy method compared to a DEXA scan?</span>
+          <svg class="faq-chev shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p class="px-4 sm:px-5 pb-5 text-sm leading-relaxed" style="color:var(--muted);">For average adults the Navy method typically lands within 3–4 percentage points of hydrostatic weighing, the laboratory reference it was validated against — DEXA scans are generally more precise but cost far more and are harder to access. Accuracy drops for very lean, very muscular, or obese individuals, and measurement technique matters more than the formula: a 2 cm waist error can move the result by 1–2 points. It is best used to track trends over time under consistent conditions rather than as a single exact number.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5 font-semibold" aria-expanded="false">
+          <span>What are the healthy body fat ranges for men and women?</span>
+          <svg class="faq-chev shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p class="px-4 sm:px-5 pb-5 text-sm leading-relaxed" style="color:var(--muted);">Per the American Council on Exercise: men — essential 2–5%, athletes 6–13%, fitness 14–17%, average 18–24%, obese 25%+. Women — essential 10–13%, athletes 14–20%, fitness 21–24%, average 25–31%, obese 32%+. The fitness-to-average band is the meaningful target for most people. Ranges drift slightly upward with age, and athletes or very muscular individuals should interpret categories alongside other health markers.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5 font-semibold" aria-expanded="false">
+          <span>Why is the Deurenberg estimate shown next to the Navy result?</span>
+          <svg class="faq-chev shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p class="px-4 sm:px-5 pb-5 text-sm leading-relaxed" style="color:var(--muted);">The Deurenberg formula (1.20 × BMI + 0.23 × age − 10.8 × sex − 5.4) is a fully independent population estimate built from BMI, age, and sex instead of tape measurements. Showing both turns one fragile number into a self-checking system: agreement within about 3 points means you can trust the neighborhood; a large gap usually flags either heavy muscle mass confusing the BMI side or a tape reading that drifted on the Navy side. Very few free calculators offer this comparison.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5 font-semibold" aria-expanded="false">
+          <span>How often should I re-measure to track fat loss?</span>
+          <svg class="faq-chev shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p class="px-4 sm:px-5 pb-5 text-sm leading-relaxed" style="color:var(--muted);">Every two to four weeks, under identical conditions — morning, fasted, same tape landmarks. Daily or weekly readings mostly reflect water, glycogen, gut contents, and technique noise rather than real fat change. A sustainable pace is about 0.5–1% of body weight per week with strength training and adequate protein to protect lean mass. If your percentage stalls while your waist shrinks and strength climbs, you are likely trading fat for muscle — trust the trend, not any single reading.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is the US Navy body fat formula?", "acceptedAnswer": { "@type": "Answer", "text": "The Navy formula estimates body fat from tape measurements using base-10 logarithms. Men: 86.010 x log10(waist - neck) - 70.041 x log10(height) + 36.76. Women: 163.205 x log10(waist + hip - neck) - 97.684 x log10(height) - 78.387, all measurements in inches." } },
+    { "@type": "Question", "name": "How do I measure my neck, waist, and hip correctly?", "acceptedAnswer": { "@type": "Answer", "text": "Neck: just below the Adam's apple, tape horizontal. Waist: men at the navel, women at the narrowest point of the torso, after a normal exhale. Hip (women only): feet together, around the widest part of the hips. Use a soft tape on bare skin, snug but not compressing, and average two or three readings." } },
+    { "@type": "Question", "name": "How accurate is the Navy method compared to a DEXA scan?", "acceptedAnswer": { "@type": "Answer", "text": "For average adults it typically lands within 3-4 percentage points of laboratory reference methods. Accuracy drops for very lean, very muscular, or obese individuals, and technique matters more than the formula. It is best for tracking trends over time under consistent conditions." } },
+    { "@type": "Question", "name": "What are the healthy body fat ranges for men and women?", "acceptedAnswer": { "@type": "Answer", "text": "Per the American Council on Exercise: men - essential 2-5%, athletes 6-13%, fitness 14-17%, average 18-24%, obese 25%+. Women - essential 10-13%, athletes 14-20%, fitness 21-24%, average 25-31%, obese 32%+." } },
+    { "@type": "Question", "name": "Why is the Deurenberg estimate shown next to the Navy result?", "acceptedAnswer": { "@type": "Answer", "text": "The Deurenberg formula (1.20 x BMI + 0.23 x age - 10.8 x sex - 5.4) is an independent estimate from BMI, age, and sex. Agreement within about 3 points with the Navy result increases confidence; a large gap usually flags heavy muscle mass or a tape measurement that drifted." } },
+    { "@type": "Question", "name": "How often should I re-measure to track fat loss?", "acceptedAnswer": { "@type": "Answer", "text": "Every two to four weeks under identical conditions - morning, fasted, same tape landmarks. A sustainable pace is about 0.5-1% of body weight per week with strength training and adequate protein to protect lean mass." } }
+  ]
+}
+</script>
+
+<!-- ============ FOOTER ============ -->
+<footer class="mt-6 border-t" style="border-color:var(--line);">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <p class="poster text-lg tracking-tight">Tape<span style="color:var(--yellow);">Trim</span></p>
+    <p class="text-xs text-center" style="color:var(--faint);">Free US Navy body fat calculator. Educational estimates only — not medical advice.</p>
+    <a href="https://fixoraa.tech" class="text-sm font-semibold hover:underline" style="color:var(--yellow);">More Tools</a>
+  </div>
+</footer>
+
+<script>
+/*__PURE_START__*/
+'use strict';
+/* ===== TapeTrim pure calculation logic — no DOM access. Safe to run in Node. ===== */
+
+var TT_CM_PER_IN = 2.54;
+var TT_KG_PER_LB = 0.45359237;
+
+function ttToNum(v, fallback) {
+  var n = (typeof v === 'string' && v.trim() === '') ? NaN : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+function ttCmToIn(cm) { cm = ttToNum(cm, NaN); return Number.isFinite(cm) ? cm / TT_CM_PER_IN : NaN; }
+function ttInToCm(i) { i = ttToNum(i, NaN); return Number.isFinite(i) ? i * TT_CM_PER_IN : NaN; }
+function ttKgToLb(kg) { kg = ttToNum(kg, NaN); return Number.isFinite(kg) ? kg / TT_KG_PER_LB : NaN; }
+function ttLbToKg(lb) { lb = ttToNum(lb, NaN); return Number.isFinite(lb) ? lb * TT_KG_PER_LB : NaN; }
+
+/* US Navy body-fat formula. All lengths in inches. Returns BF% or NaN. */
+function ttNavy(sex, hIn, neckIn, waistIn, hipIn) {
+  hIn = ttToNum(hIn, NaN); neckIn = ttToNum(neckIn, NaN);
+  waistIn = ttToNum(waistIn, NaN); hipIn = ttToNum(hipIn, NaN);
+  if (!(hIn > 0 && neckIn > 0 && waistIn > 0)) return NaN;
+  var l10 = Math.log10;
+  if (sex === 'male') {
+    var d = waistIn - neckIn;
+    if (!(d > 0)) return NaN;
+    return 86.010 * l10(d) - 70.041 * l10(hIn) + 36.76;
+  }
+  if (sex === 'female') {
+    if (!(hipIn > 0)) return NaN;
+    var d2 = waistIn + hipIn - neckIn;
+    if (!(d2 > 0)) return NaN;
+    return 163.205 * l10(d2) - 97.684 * l10(hIn) - 78.387;
+  }
+  return NaN;
+}
+
+/* Deurenberg BMI-based estimate: 1.20*BMI + 0.23*age - 10.8*sex - 5.4 (sex: male=1, female=0) */
+function ttDeurenberg(bmi, age, sex) {
+  bmi = ttToNum(bmi, NaN); age = ttToNum(age, NaN);
+  if (!(bmi > 0) || !(age >= 0)) return NaN;
+  if (sex !== 'male' && sex !== 'female') return NaN;
+  return 1.20 * bmi + 0.23 * age - 10.8 * (sex === 'male' ? 1 : 0) - 5.4;
+}
+
+function ttBmi(weightKg, heightCm) {
+  weightKg = ttToNum(weightKg, NaN); heightCm = ttToNum(heightCm, NaN);
+  if (!(weightKg > 0 && heightCm > 0)) return NaN;
+  var m = heightCm / 100;
+  return weightKg / (m * m);
+}
+
+/* ACE body-fat zones, contiguous. Scale runs 0-45 for the visual bar. */
+var TT_ZONES = {
+  male: [
+    { name: 'Essential', min: 0, max: 6 },
+    { name: 'Athletes', min: 6, max: 14 },
+    { name: 'Fitness', min: 14, max: 18 },
+    { name: 'Average', min: 18, max: 25 },
+    { name: 'Obese', min: 25, max: 45 }
+  ],
+  female: [
+    { name: 'Essential', min: 0, max: 14 },
+    { name: 'Athletes', min: 14, max: 21 },
+    { name: 'Fitness', min: 21, max: 25 },
+    { name: 'Average', min: 25, max: 32 },
+    { name: 'Obese', min: 32, max: 45 }
+  ]
+};
+
+function ttCategory(sex, bf) {
+  bf = ttToNum(bf, NaN);
+  var zones = TT_ZONES[sex];
+  if (!zones || !(bf >= 0)) return null;
+  for (var i = 0; i < zones.length; i++) {
+    var z = zones[i];
+    if (bf >= z.min && (bf < z.max || i === zones.length - 1)) return z.name;
+  }
+  return null;
+}
+
+/* Split weight into fat and lean mass at a given body-fat %. */
+function ttMass(weightKg, bf) {
+  weightKg = ttToNum(weightKg, NaN); bf = ttToNum(bf, NaN);
+  if (!(weightKg > 0) || !(bf >= 0) || !(bf < 100)) return { fatKg: NaN, leanKg: NaN };
+  var fatKg = weightKg * bf / 100;
+  return { fatKg: fatKg, leanKg: weightKg - fatKg };
+}
+
+/*
+ * Goal mode: keep lean mass fixed, solve for the weight at target BF%.
+ * Returns { ok, targetWeightKg, fatToLoseKg, leanKg, status } where status is
+ * 'lose' | 'gain' | 'same'. fatToLoseKg is positive when fat must be lost.
+ */
+function ttGoal(weightKg, bf, target) {
+  weightKg = ttToNum(weightKg, NaN); bf = ttToNum(bf, NaN); target = ttToNum(target, NaN);
+  var bad = { ok: false, targetWeightKg: NaN, fatToLoseKg: NaN, leanKg: NaN, status: 'invalid' };
+  if (!(weightKg > 0) || !(bf > 0) || !(bf < 100) || !(target > 0) || !(target < 100)) return bad;
+  var leanKg = weightKg * (1 - bf / 100);
+  if (!(leanKg > 0)) return bad;
+  var targetWeightKg = leanKg / (1 - target / 100);
+  var fatToLoseKg = weightKg - targetWeightKg;
+  var status = fatToLoseKg > 0.05 ? 'lose' : (fatToLoseKg < -0.05 ? 'gain' : 'same');
+  return { ok: true, targetWeightKg: targetWeightKg, fatToLoseKg: fatToLoseKg, leanKg: leanKg, status: status };
+}
+
+/*
+ * Validate raw display-unit inputs. d = {height, weight, age, neck, waist, hip}.
+ * Returns an array of friendly error strings (empty = valid).
+ */
+function ttValidate(sex, unit, d) {
+  var errs = [];
+  var isMetric = unit === 'metric';
+  var height = ttToNum(d.height, NaN), weight = ttToNum(d.weight, NaN), age = ttToNum(d.age, NaN);
+  var neck = ttToNum(d.neck, NaN), waist = ttToNum(d.waist, NaN), hip = ttToNum(d.hip, NaN);
+
+  var hCm = isMetric ? height : ttInToCm(height);
+  var wKg = isMetric ? weight : ttLbToKg(weight);
+  var neckIn = isMetric ? ttCmToIn(neck) : neck;
+  var waistIn = isMetric ? ttCmToIn(waist) : waist;
+  var hipIn = isMetric ? ttCmToIn(hip) : hip;
+
+  if (!(height > 0)) errs.push('Please enter your height.');
+  else if (!(hCm >= 100 && hCm <= 250)) errs.push('Height looks off — expected 100–250 cm (39–98 in).');
+  if (!(weight > 0)) errs.push('Please enter your weight.');
+  else if (!(wKg >= 25 && wKg <= 400)) errs.push('Weight looks off — expected 25–400 kg (55–880 lb).');
+  if (!(age >= 14)) errs.push('The Navy method is validated for adults — please enter an age of 14 or older.');
+  else if (!(age <= 100)) errs.push('Age looks off — please enter 100 or less.');
+  if (!(neck > 0)) errs.push('Please enter your neck measurement.');
+  if (!(waist > 0)) errs.push('Please enter your waist measurement.');
+  if (sex === 'female' && !(hip > 0)) errs.push('Please enter your hip measurement (needed for the female formula).');
+  if (sex !== 'male' && sex !== 'female') errs.push('Please choose male or female.');
+  if (unit !== 'metric' && unit !== 'imperial') errs.push('Please choose metric or imperial units.');
+
+  if (errs.length === 0) {
+    if (sex === 'male' && !(waistIn > neckIn)) errs.push('Waist must be larger than neck — double-check your tape readings.');
+    if (sex === 'female' && !(waistIn + hipIn > neckIn)) errs.push('Waist + hip must be larger than neck — double-check your tape readings.');
+  }
+  return errs;
+}
+
+/* Full pipeline: raw display-unit inputs -> validated result object. */
+function ttCompute(sex, unit, d) {
+  var errors = ttValidate(sex, unit, d);
+  var isMetric = unit === 'metric';
+  var hCm = isMetric ? ttToNum(d.height, NaN) : ttInToCm(d.height);
+  var wKg = isMetric ? ttToNum(d.weight, NaN) : ttLbToKg(d.weight);
+  var age = ttToNum(d.age, NaN);
+  var hIn = ttCmToIn(hCm);
+  var neckIn = isMetric ? ttCmToIn(d.neck) : ttToNum(d.neck, NaN);
+  var waistIn = isMetric ? ttCmToIn(d.waist) : ttToNum(d.waist, NaN);
+  var hipIn = sex === 'female' ? (isMetric ? ttCmToIn(d.hip) : ttToNum(d.hip, NaN)) : NaN;
+
+  var out = { errors: errors, sex: sex, unit: unit, weightKg: wKg, heightCm: hCm, age: age,
+              navy: NaN, deurenberg: NaN, bmi: NaN, fatKg: NaN, leanKg: NaN,
+              category: null, zones: TT_ZONES[sex] || TT_ZONES.male };
+  if (errors.length > 0) return out;
+  out.navy = ttNavy(sex, hIn, neckIn, waistIn, hipIn);
+  out.bmi = ttBmi(wKg, hCm);
+  out.deurenberg = ttDeurenberg(out.bmi, age, sex);
+  var m = ttMass(wKg, out.navy);
+  out.fatKg = m.fatKg; out.leanKg = m.leanKg;
+  out.category = ttCategory(sex, out.navy);
+  return out;
+}
+
+function ttFmt(n, dec) {
+  n = ttToNum(n, NaN);
+  if (!Number.isFinite(n)) return '–';
+  return n.toFixed(dec == null ? 1 : dec);
+}
+/*__PURE_END__*/
+
+/* ================= UI glue (DOM only, not part of pure logic) ================= */
+(function () {
+  'use strict';
+  var STORE = 'tapetrim-v1', HIST = 'tapetrim-hist';
+  var ZONE_COLORS = ['#6E6046', '#A8892F', '#FFD60A', '#E07B39', '#D64541'];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var state = { sex: 'male', unit: 'metric', goalOn: false };
+
+  function readInputs() {
+    return {
+      height: $('in_height').value, weight: $('in_weight').value, age: $('in_age').value,
+      neck: $('in_neck').value, waist: $('in_waist').value, hip: $('in_hip').value
+    };
+  }
+  function massUnit() { return state.unit === 'metric' ? 'kg' : 'lb'; }
+  function toMass(kg) { return state.unit === 'metric' ? kg : ttKgToLb(kg); }
+
+  function setPressed(id, on) { $(id).setAttribute('aria-pressed', on ? 'true' : 'false'); }
+
+  function setSex(s) {
+    state.sex = s;
+    setPressed('sex_male', s === 'male');
+    setPressed('sex_female', s === 'female');
+    $('hip_wrap').style.display = s === 'female' ? '' : 'none';
+    var g = $('in_goal'), gn = $('in_goal_num');
+    if (s === 'female') { g.min = 12; gn.min = 8; if (Number(g.value) < 12) { g.value = 24; gn.value = 24; } }
+    else { g.min = 5; gn.min = 5; if (Number(g.value) > 40) { g.value = 18; gn.value = 18; } }
+    recalc();
+  }
+
+  function convertInputs(toUnit) {
+    var fromMetric = state.unit === 'metric';
+    if ((fromMetric && toUnit === 'metric') || (!fromMetric && toUnit === 'imperial')) return;
+    function convLen(v) {
+      var n = ttToNum(v, NaN);
+      if (!Number.isFinite(n)) return v;
+      return (fromMetric ? ttCmToIn(n) : ttInToCm(n)).toFixed(1);
+    }
+    function convMass(v) {
+      var n = ttToNum(v, NaN);
+      if (!Number.isFinite(n)) return v;
+      return (fromMetric ? ttKgToLb(n) : ttLbToKg(n)).toFixed(1);
+    }
+    $('in_height').value = convLen($('in_height').value);
+    $('in_neck').value = convLen($('in_neck').value);
+    $('in_waist').value = convLen($('in_waist').value);
+    $('in_hip').value = convLen($('in_hip').value);
+    $('in_weight').value = convMass($('in_weight').value);
+    state.unit = toUnit;
+    setPressed('unit_metric', toUnit === 'metric');
+    setPressed('unit_imperial', toUnit === 'imperial');
+    var lenU = toUnit === 'metric' ? '(cm)' : '(in)';
+    var massU = toUnit === 'metric' ? '(kg)' : '(lb)';
+    document.querySelectorAll('.unit-len').forEach(function (el) { el.textContent = lenU; });
+    document.querySelectorAll('.unit-mass').forEach(function (el) { el.textContent = massU; });
+    $('in_height').placeholder = toUnit === 'metric' ? '178' : '70';
+    $('in_weight').placeholder = toUnit === 'metric' ? '78' : '172';
+  }
+
+  function showErrors(errs) {
+    var box = $('errors');
+    if (!errs.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    box.classList.remove('hidden');
+    box.innerHTML = '<p class="font-bold mb-1" style="color:var(--danger);">Check your tape readings:</p><ul class="list-disc pl-5 space-y-1">' +
+      errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
+  }
+
+  function renderScale(r) {
+    var host = $('scale'), labels = $('scale_labels');
+    host.innerHTML = ''; labels.innerHTML = '';
+    var total = 45;
+    r.zones.forEach(function (z, i) {
+      var seg = document.createElement('div');
+      seg.className = 'zone-seg';
+      seg.style.width = ((z.max - z.min) / total * 100) + '%';
+      seg.style.background = ZONE_COLORS[i];
+      seg.title = z.name + ': ' + z.min + '–' + (i === r.zones.length - 1 ? z.max + '+' : z.max) + '%';
+      host.appendChild(seg);
+      var lab = document.createElement('div');
+      lab.style.width = ((z.max - z.min) / total * 100) + '%';
+      lab.className = 'px-1 truncate';
+      lab.textContent = z.name;
+      labels.appendChild(lab);
+    });
+    var mk = $('scale_marker');
+    if (Number.isFinite(r.navy)) {
+      var pct = Math.min(100, Math.max(0, r.navy / total * 100));
+      mk.style.left = 'calc(' + pct.toFixed(2) + '% - 1px)';
+      mk.style.display = '';
+    } else { mk.style.display = 'none'; }
+    $('scale_sub').textContent = 'ACE body-fat zones for ' + (r.sex === 'male' ? 'men' : 'women') + ' — marker shows your Navy result.';
+    if (Number.isFinite(r.navy) && r.category) {
+      var z = r.zones.filter(function (x) { return x.name === r.category; })[0];
+      var note;
+      if (r.category === 'Obese') note = ttFmt(r.navy, 1) + '% sits in the Obese zone — even a 5-point drop brings measurable health gains.';
+      else if (z) note = ttFmt(r.navy, 1) + '% sits in the ' + r.category + ' zone (' + z.min + '–' + z.max + '% for ' + (r.sex === 'male' ? 'men' : 'women') + ').';
+      else note = '';
+      $('scale_note').textContent = note;
+    } else { $('scale_note').textContent = ''; }
+  }
+
+  function renderGoal(r) {
+    var out = $('goal_out');
+    if (!state.goalOn) return;
+    var target = ttToNum($('in_goal_num').value, NaN);
+    if (!Number.isFinite(r.navy) || !Number.isFinite(target)) {
+      out.innerHTML = '<p class="text-sm col-span-3" style="color:var(--faint);">Calculate a valid result and set a target to see your goal math.</p>';
+      return;
+    }
+    var g = ttGoal(r.weightKg, r.navy, target);
+    if (!g.ok) {
+      out.innerHTML = '<p class="text-sm col-span-3" style="color:var(--danger);">Target must be between 1% and 99%.</p>';
+      return;
+    }
+    var u = massUnit();
+    var headline, sub;
+    if (g.status === 'lose') {
+      headline = 'Lose ' + ttFmt(toMass(g.fatToLoseKg), 1) + ' ' + u;
+      sub = 'of pure fat to reach ' + ttFmt(target, 1) + '%';
+    } else if (g.status === 'gain') {
+      headline = 'Gain ' + ttFmt(toMass(-g.fatToLoseKg), 1) + ' ' + u;
+      sub = 'you are already leaner than ' + ttFmt(target, 1) + '% — this is the weight at that target';
+    } else {
+      headline = 'On target';
+      sub = 'you are within a hair of ' + ttFmt(target, 1) + '%';
+    }
+    out.innerHTML =
+      '<div class="diag rounded-xl p-4 text-center"><p class="lbl">Fat to shift</p><p class="poster text-2xl num" style="color:var(--yellow);">' + esc(headline) + '</p><p class="text-[11px] mt-1" style="color:var(--faint);">' + esc(sub) + '</p></div>' +
+      '<div class="diag rounded-xl p-4 text-center"><p class="lbl">Target weight</p><p class="poster text-2xl num">' + esc(ttFmt(toMass(g.targetWeightKg), 1)) + ' ' + u + '</p><p class="text-[11px] mt-1" style="color:var(--faint);">at ' + esc(ttFmt(target, 1)) + '% body fat</p></div>' +
+      '<div class="diag rounded-xl p-4 text-center"><p class="lbl">Lean mass protected</p><p class="poster text-2xl num" style="color:var(--ok);">' + esc(ttFmt(toMass(g.leanKg), 1)) + ' ' + u + '</p><p class="text-[11px] mt-1" style="color:var(--faint);">kept constant in this math</p></div>';
+  }
+
+  function saveHistory(r) {
+    if (!Number.isFinite(r.navy)) return;
+    try {
+      var h = JSON.parse(localStorage.getItem(HIST) || '[]');
+      h.unshift({ t: Date.now(), sex: r.sex, unit: r.unit, bf: Math.round(r.navy * 10) / 10,
+                  cat: r.category, d: readInputs() });
+      h = h.slice(0, 5);
+      localStorage.setItem(HIST, JSON.stringify(h));
+      renderHistory();
+    } catch (e) {}
+  }
+
+  function renderHistory() {
+    var wrap = $('hist_wrap'), list = $('hist_list');
+    var h = [];
+    try { h = JSON.parse(localStorage.getItem(HIST) || '[]'); } catch (e) {}
+    if (!h.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    list.innerHTML = '';
+    h.forEach(function (item, idx) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hist-chip diag rounded-lg px-3 py-2 text-xs font-bold num';
+      var dt = new Date(item.t);
+      b.innerHTML = '<span style="color:var(--yellow);">' + esc(ttFmt(item.bf, 1)) + '%</span> <span style="color:var(--faint);">' +
+        esc(item.cat || '') + ' · ' + esc(dt.toLocaleDateString()) + '</span>';
+      b.addEventListener('click', function () { restoreItem(item); });
+      b.dataset.idx = idx;
+      list.appendChild(b);
+    });
+  }
+
+  function restoreItem(item) {
+    setSexSilent(item.sex);
+    if (item.unit !== state.unit) convertInputs(item.unit);
+    $('in_height').value = item.d.height; $('in_weight').value = item.d.weight;
+    $('in_age').value = item.d.age; $('in_neck').value = item.d.neck;
+    $('in_waist').value = item.d.waist; $('in_hip').value = item.d.hip;
+    recalc();
+  }
+  function setSexSilent(s) {
+    state.sex = s;
+    setPressed('sex_male', s === 'male');
+    setPressed('sex_female', s === 'female');
+    $('hip_wrap').style.display = s === 'female' ? '' : 'none';
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STORE, JSON.stringify({ sex: state.sex, unit: state.unit, d: readInputs(), goal: $('in_goal_num').value })); }
+    catch (e) {}
+  }
+  function loadState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (!s || !s.d) return false;
+      setSexSilent(s.sex === 'female' ? 'female' : 'male');
+      state.unit = 'metric';
+      setPressed('unit_metric', true); setPressed('unit_imperial', false);
+      $('in_height').value = s.d.height; $('in_weight').value = s.d.weight;
+      $('in_age').value = s.d.age; $('in_neck').value = s.d.neck;
+      $('in_waist').value = s.d.waist; $('in_hip').value = s.d.hip || '';
+      if (s.unit === 'imperial') convertInputs('imperial');
+      if (s.goal) { $('in_goal').value = s.goal; $('in_goal_num').value = s.goal; }
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function recalc() {
+    var r = ttCompute(state.sex, state.unit, readInputs());
+    showErrors(r.errors);
+    var valid = r.errors.length === 0 && Number.isFinite(r.navy);
+    $('res_bf').textContent = valid ? ttFmt(r.navy, 1) + '%' : '–';
+    $('hero_tease').textContent = valid ? ttFmt(r.navy, 1) + '%' : '–%';
+    $('res_bmi').textContent = valid ? ttFmt(r.bmi, 1) : '–';
+    $('res_cat').textContent = valid && r.category ? r.category : '—';
+    var u = massUnit();
+    if (valid) {
+      $('res_fat').textContent = ttFmt(toMass(r.fatKg), 1) + ' ' + u;
+      $('res_lean').textContent = ttFmt(toMass(r.leanKg), 1) + ' ' + u;
+      $('res_fat_sub').textContent = ttFmt(r.navy, 1) + '% of total weight';
+      $('res_lean_sub').textContent = ttFmt(100 - r.navy, 1) + '% of total weight';
+      $('bar_fat').style.width = Math.min(100, r.navy) + '%';
+      $('bar_lean').style.width = Math.min(100, 100 - r.navy) + '%';
+      $('cmp_navy').textContent = ttFmt(r.navy, 1) + '%';
+      $('cmp_deu').textContent = ttFmt(r.deurenberg, 1) + '%';
+      var delta = r.navy - r.deurenberg;
+      var dEl = $('cmp_delta');
+      dEl.textContent = (delta >= 0 ? '+' : '') + ttFmt(delta, 1) + ' pt';
+      dEl.style.color = Math.abs(delta) <= 3 ? 'var(--ok)' : 'var(--danger)';
+      $('cmp_delta_note').textContent = Math.abs(delta) <= 3 ? 'methods agree — trust the neighborhood' : 'wide gap — re-check tape readings';
+    } else {
+      $('res_fat').textContent = '–'; $('res_lean').textContent = '–';
+      $('res_fat_sub').textContent = ''; $('res_lean_sub').textContent = '';
+      $('bar_fat').style.width = '0%'; $('bar_lean').style.width = '0%';
+      $('cmp_navy').textContent = '–'; $('cmp_deu').textContent = '–';
+      $('cmp_delta').textContent = '–'; $('cmp_delta').style.color = ''; $('cmp_delta_note').textContent = '';
+    }
+    renderScale(r);
+    renderGoal(r);
+    saveState();
+  }
+
+  function wire() {
+    ['in_height', 'in_weight', 'in_age', 'in_neck', 'in_waist', 'in_hip'].forEach(function (id) {
+      $(id).addEventListener('input', recalc);
+    });
+    $('sex_male').addEventListener('click', function () { setSex('male'); });
+    $('sex_female').addEventListener('click', function () { setSex('female'); });
+    $('unit_metric').addEventListener('click', function () { convertInputs('metric'); recalc(); });
+    $('unit_imperial').addEventListener('click', function () { convertInputs('imperial'); recalc(); });
+    $('btn_calc').addEventListener('click', function () {
+      recalc();
+      var r = ttCompute(state.sex, state.unit, readInputs());
+      if (r.errors.length === 0 && Number.isFinite(r.navy)) saveHistory(r);
+    });
+    $('btn_reset').addEventListener('click', function () {
+      try { localStorage.removeItem(STORE); } catch (e) {}
+      setSexSilent('male');
+      if (state.unit !== 'metric') convertInputs('metric');
+      $('in_height').value = 178; $('in_weight').value = 78; $('in_age').value = 32;
+      $('in_neck').value = 39; $('in_waist').value = 88; $('in_hip').value = 102;
+      recalc();
+    });
+    $('btn_copy').addEventListener('click', function () {
+      var r = ttCompute(state.sex, state.unit, readInputs());
+      if (r.errors.length || !Number.isFinite(r.navy)) return;
+      var u = massUnit();
+      var txt = 'TapeTrim body-fat check: ' + ttFmt(r.navy, 1) + '% (Navy) / ' + ttFmt(r.deurenberg, 1) +
+        '% (Deurenberg), ' + r.category + '. Fat ' + ttFmt(toMass(r.fatKg), 1) + u + ', lean ' +
+        ttFmt(toMass(r.leanKg), 1) + u + ', BMI ' + ttFmt(r.bmi, 1) + '.';
+      function done() { var n = $('copy_note'); n.classList.remove('hidden'); setTimeout(function () { n.classList.add('hidden'); }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        ta.remove(); done();
+      }
+    });
+    $('goal_toggle').addEventListener('click', function () {
+      state.goalOn = !state.goalOn;
+      $('goal_toggle').setAttribute('aria-checked', state.goalOn ? 'true' : 'false');
+      $('goal_body').classList.toggle('hidden', !state.goalOn);
+      renderGoal(ttCompute(state.sex, state.unit, readInputs()));
+    });
+    function syncGoal(fromSlider) {
+      if (fromSlider) $('in_goal_num').value = $('in_goal').value;
+      else $('in_goal').value = $('in_goal_num').value;
+      renderGoal(ttCompute(state.sex, state.unit, readInputs()));
+    }
+    $('in_goal').addEventListener('input', function () { syncGoal(true); });
+    $('in_goal_num').addEventListener('input', function () { syncGoal(false); });
+    document.querySelectorAll('.faq-item').forEach(function (item) {
+      var btn = item.querySelector('.faq-q');
+      btn.addEventListener('click', function () {
+        var open = item.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    });
+  }
+
+  loadState();
+  renderHistory();
+  wire();
+  recalc();
+})();
+</script>
+</body>
+</html>
